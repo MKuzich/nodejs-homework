@@ -5,11 +5,11 @@ const {
   addContact,
   updateContact,
   updateStatusContact,
-} = require("../service/index");
+} = require("../services/contactsService");
 
 const getContactsController = async (req, res, next) => {
   try {
-    const data = await getAllContacts();
+    const data = await getAllContacts(req.query);
     res.json({
       status: "success",
       code: 200,

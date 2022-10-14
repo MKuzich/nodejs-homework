@@ -3,10 +3,10 @@ const validateRequest = (schema) => {
     const { error } = schema.validate(req.body);
     if (error) {
       next({
-        status: "error",
+        status: "400 Bad Request",
         code: 400,
         message: `Validate error`,
-        data: "Validate error",
+        data: error,
       });
     }
     next();

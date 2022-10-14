@@ -1,7 +1,12 @@
-const { Contact } = require("./schemas/contact");
+const { Contact } = require("../schemas/contactSchema");
 
-const getAllContacts = async () => {
-  return Contact.find();
+const getAllContacts = async ({ page, limit, favorite }) => {
+  const skip = (page - 1) * limit;
+  const query = {};
+  if (favorite) {
+    query.favorite = true;
+  }
+  return Contact.find(query).skip(skip).limit(limit);
 };
 
 const getContactById = async (id) => {
