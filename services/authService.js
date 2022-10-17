@@ -2,6 +2,10 @@ const { User } = require("../schemas/userSchema");
 const bcrypt = require("bcryptjs");
 const { createError } = require("../helpers/errors");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const Jimp = require("jimp");
+const path = require("path");
+const fs = require("fs").promises;
 
 const SECRET_KEY = "secretsalt";
 
@@ -11,8 +15,20 @@ const signUp = async ({ email, password }) => {
     throw createError(409, "Email in use");
   }
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, password: hashedPassword });
-  return user;
+  const avatarURL = gravatar.url(email, { s: "250", r: "pg", d: "404" }, true);
+  const user = await User.create({
+    email,
+    password: hashedPassword,
+    avatarURL,
+  });
+  const payload = { id: user._id, email, subscription: user.subscription };
+  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "1h" });
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { token },
+    { new: true }
+  );
+  return updatedUser;
 };
 
 const logIn = async ({ email, password }) => {
@@ -38,6 +54,22 @@ const update = async (id, sub) => {
   await User.findByIdAndUpdate(id, { subscription: sub });
 };
 
+const uploadImage = async (filePath, name, id) => {
+  const newPath = path.resolve(`./public/avatars/${name}`);
+  const avatarURL = `/avatars/${name}`;
+  const image = await Jimp.read(filePath);
+  try {
+    await image.resize(250, 250);
+    await image.writeAsync(newPath);
+    await User.findByIdAndUpdate(id, { avatarURL });
+    return avatarURL;
+  } catch (err) {
+    return err;
+  } finally {
+    await fs.unlink(filePath);
+  }
+};
+
 const authenticate = async (token) => {
   try {
     const { id } = jwt.verify(token, SECRET_KEY);
@@ -49,4 +81,4 @@ const authenticate = async (token) => {
   }
 };
 
-module.exports = { signUp, logIn, logOut, update, authenticate };
+module.exports = { signUp, logIn, logOut, update, uploadImage, authenticate };

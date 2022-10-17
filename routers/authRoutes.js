@@ -5,10 +5,12 @@ const {
   logOutController,
   getCurrentController,
   updateController,
+  imageUploadController,
 } = require("../controller/authController");
 const { validateRequest } = require("../middlewares/validateRequest");
 const { userSchema } = require("../schemas/userSchema");
 const { auth } = require("../middlewares/authValidate");
+const upload = require("../middlewares/upload");
 
 const router = express.Router();
 
@@ -21,5 +23,7 @@ router.post("/logout", auth, logOutController);
 router.get("/current", auth, getCurrentController);
 
 router.patch("/", auth, updateController);
+
+router.patch("/avatars", auth, upload.single("avatar"), imageUploadController);
 
 module.exports = router;
