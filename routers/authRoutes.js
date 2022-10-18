@@ -6,6 +6,8 @@ const {
   getCurrentController,
   updateController,
   imageUploadController,
+  getVerifyContoller,
+  getReVerifyContoller,
 } = require("../controller/authController");
 const { validateRequest } = require("../middlewares/validateRequest");
 const { userSchema } = require("../schemas/userSchema");
@@ -25,5 +27,9 @@ router.get("/current", auth, getCurrentController);
 router.patch("/", auth, updateController);
 
 router.patch("/avatars", auth, upload.single("avatar"), imageUploadController);
+
+router.get("/verify/:verificationToken", getVerifyContoller);
+
+router.post("/verify/", getReVerifyContoller);
 
 module.exports = router;

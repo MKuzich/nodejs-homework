@@ -1,16 +1,16 @@
 const app = require("./app");
 const mongoose = require("mongoose");
+require("dotenv").config();
 
-const uriDb =
-  "mongodb+srv://MKuzich:MKuzich@cluster0.csbvxj0.mongodb.net/db-contacts";
+const { PORT = 3000, DB_HOST } = process.env;
 
-const connection = mongoose.connect(uriDb, {
+const connection = mongoose.connect(DB_HOST, {
   promiseLibrary: global.Promise,
 });
 
 connection
   .then(() => {
-    app.listen(3000, () => {
+    app.listen(PORT, () => {
       console.log("Database connection successful");
     });
   })

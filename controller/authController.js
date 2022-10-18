@@ -3,6 +3,8 @@ const {
   logOut,
   update,
   uploadImage,
+  verifyUser,
+  reVerifyUser,
 } = require("../services/authService");
 const authService = require("../services/authService");
 const { createError } = require("../helpers/errors");
@@ -87,6 +89,42 @@ const imageUploadController = async (req, res, next) => {
   });
 };
 
+const getVerifyContoller = async (req, res, next) => {
+  const { verificationToken } = req.params;
+  try {
+    const isValid = await verifyUser(verificationToken);
+    if (!isValid) {
+      next(createError(404, "User not found"));
+    }
+    res.json({
+      status: "success",
+      code: 200,
+      message: "Verification successful",
+    });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+};
+
+const getReVerifyContoller = async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) {
+    next(createError(400, "Missing required field email"));
+  }
+  try {
+    await reVerifyUser(email);
+    res.json({
+      status: "success",
+      code: 200,
+      message: "Verification email sent",
+    });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+};
+
 module.exports = {
   signUpController,
   logInController,
@@ -94,4 +132,6 @@ module.exports = {
   getCurrentController,
   updateController,
   imageUploadController,
+  getVerifyContoller,
+  getReVerifyContoller,
 };
