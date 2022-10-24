@@ -10,28 +10,34 @@ const {
 const { validateRequest } = require("../middlewares/validateRequest");
 const { schemaCreate, schemaUpdate } = require("../schemas/contactSchema");
 const { auth } = require("../middlewares/authValidate");
+const ctrlWrapper = require("../helpers/ctrlWrapper");
 
 const router = express.Router();
 
-router.get("/", auth, getContactsController);
+router.get("/", auth, ctrlWrapper(getContactsController));
 
-router.get("/:id", auth, getContactByIdController);
+router.get("/:id", auth, ctrlWrapper(getContactByIdController));
 
-router.post("/", auth, validateRequest(schemaCreate), addContactController);
+router.post(
+  "/",
+  auth,
+  validateRequest(schemaCreate),
+  ctrlWrapper(addContactController)
+);
 
 router.put(
   "/:id",
   auth,
   validateRequest(schemaCreate),
-  updateContactController
+  ctrlWrapper(updateContactController)
 );
 
-router.delete("/:id", auth, removeContactController);
+router.delete("/:id", auth, ctrlWrapper(removeContactController));
 
 router.patch(
   "/:id/favourite",
   validateRequest(schemaUpdate),
-  updateStatusContactController
+  ctrlWrapper(updateStatusContactController)
 );
 
 module.exports = router;
