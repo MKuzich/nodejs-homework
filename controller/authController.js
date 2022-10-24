@@ -3,49 +3,36 @@ const {
   logOut,
   update,
   uploadImage,
+  verifyUser,
+  reVerifyUser,
 } = require("../services/authService");
 const authService = require("../services/authService");
 const { createError } = require("../helpers/errors");
 
 const signUpController = async (req, res, next) => {
   const { body } = req;
-  try {
-    const { token, email, subscription } = await authService.signUp(body);
-    return res.json({
-      status: "success",
-      code: 201,
-      token,
-      user: { email, subscription },
-    });
-  } catch (err) {
-    console.error(err);
-    next(err);
-  }
+  const { token, email, subscription } = await authService.signUp(body);
+  return res.json({
+    status: "success",
+    code: 201,
+    token,
+    user: { email, subscription },
+  });
 };
 
 const logInController = async (req, res, next) => {
   const { body } = req;
-  try {
-    const token = await logIn(body);
-    res.json({
-      status: "success",
-      code: 200,
-      data: token,
-    });
-  } catch (err) {
-    console.error(err);
-    next(err);
-  }
+  const token = await logIn(body);
+  res.json({
+    status: "success",
+    code: 200,
+    data: token,
+  });
 };
 
 const logOutController = async (req, res, next) => {
-  try {
-    await logOut(req.user._id);
-    res.sendStatus(204);
-  } catch (err) {
-    console.error(err);
-    next(err);
-  }
+  await logOut(req.user._id);
+  res.sendStatus(204);
 };
 
 const getCurrentController = (req, res, next) => {
@@ -63,17 +50,12 @@ const updateController = async (req, res, next) => {
   if (!subs.includes(subscription)) {
     next(createError(400, "Wrong type of subscription"));
   }
-  try {
-    await update(req.user._id, subscription);
-    res.json({
-      status: "success",
-      code: 200,
-      data: { subscription },
-    });
-  } catch (err) {
-    console.error(err);
-    next(err);
-  }
+  await update(req.user._id, subscription);
+  res.json({
+    status: "success",
+    code: 200,
+    data: { subscription },
+  });
 };
 
 const imageUploadController = async (req, res, next) => {
@@ -87,6 +69,32 @@ const imageUploadController = async (req, res, next) => {
   });
 };
 
+const getVerifyContoller = async (req, res, next) => {
+  const { verificationToken } = req.params;
+  const isValid = await verifyUser(verificationToken);
+  if (!isValid) {
+    next(createError(404, "User not found"));
+  }
+  res.json({
+    status: "success",
+    code: 200,
+    message: "Verification successful",
+  });
+};
+
+const getReVerifyContoller = async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) {
+    next(createError(400, "Missing required field email"));
+  }
+  await reVerifyUser(email);
+  res.json({
+    status: "success",
+    code: 200,
+    message: "Verification email sent",
+  });
+};
+
 module.exports = {
   signUpController,
   logInController,
@@ -94,4 +102,6 @@ module.exports = {
   getCurrentController,
   updateController,
   imageUploadController,
+  getVerifyContoller,
+  getReVerifyContoller,
 };

@@ -6,20 +6,26 @@ const gravatar = require("gravatar");
 const Jimp = require("jimp");
 const path = require("path");
 const fs = require("fs").promises;
+const uuid = require("uuid");
+const sendEmail = require("./emailService");
+require("dotenv").config();
 
-const SECRET_KEY = "secretsalt";
+const { SECRET_KEY } = process.env;
 
 const signUp = async ({ email, password }) => {
+  console.log("secret_key:", SECRET_KEY);
   const data = await User.findOne({ email });
   if (data) {
     throw createError(409, "Email in use");
   }
   const hashedPassword = await bcrypt.hash(password, 10);
   const avatarURL = gravatar.url(email, { s: "250", r: "pg", d: "404" }, true);
+  const verificationToken = uuid.v4();
   const user = await User.create({
     email,
     password: hashedPassword,
     avatarURL,
+    verificationToken,
   });
   const payload = { id: user._id, email, subscription: user.subscription };
   const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "1h" });
@@ -28,6 +34,7 @@ const signUp = async ({ email, password }) => {
     { token },
     { new: true }
   );
+  await sendEmail(email, verificationToken);
   return updatedUser;
 };
 
@@ -35,6 +42,9 @@ const logIn = async ({ email, password }) => {
   const user = await User.findOne({ email });
   if (!user) {
     throw createError(401, "Email or password is wrong");
+  }
+  if (!user.verify) {
+    throw createError(401, "User not verified");
   }
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) {
@@ -70,6 +80,27 @@ const uploadImage = async (filePath, name, id) => {
   }
 };
 
+const verifyUser = async (verificationToken) => {
+  const user = await User.findOne({ verificationToken });
+  if (!user) {
+    return false;
+  }
+  await User.findByIdAndUpdate(user._id, {
+    verificationToken: null,
+    verify: true,
+  });
+  return true;
+};
+
+const reVerifyUser = async (email) => {
+  const user = await User.findOne({ email });
+  if (user.verify) {
+    throw createError(400, "Verification has already been passed");
+  }
+  await sendEmail(email, user.verificationToken);
+  return true;
+};
+
 const authenticate = async (token) => {
   try {
     const { id } = jwt.verify(token, SECRET_KEY);
@@ -81,4 +112,13 @@ const authenticate = async (token) => {
   }
 };
 
-module.exports = { signUp, logIn, logOut, update, uploadImage, authenticate };
+module.exports = {
+  signUp,
+  logIn,
+  logOut,
+  update,
+  uploadImage,
+  verifyUser,
+  reVerifyUser,
+  authenticate,
+};
